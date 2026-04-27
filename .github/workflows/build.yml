@@ -123,7 +123,7 @@ jobs:
     name: 📦 Publicar Release
     needs: [ build-windows, build-linux, build-mac ]
     runs-on: ubuntu-latest
-    if: github.event_name == 'release'
+    github.event_name == 'release'
     steps:
       - name: Baixar artefato Windows
         uses: actions/download-artifact@v4
