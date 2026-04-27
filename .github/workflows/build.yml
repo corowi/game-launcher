@@ -123,6 +123,7 @@ jobs:
 
   # ── Junta tudo num Release (só quando criar uma release no GitHub) ───────
   release:
+    uses: actions/download-artifact@v4
     name: 📦 Publicar Release
     needs: [ build-windows, build-linux, build-mac ]
     runs-on: ubuntu-latest
