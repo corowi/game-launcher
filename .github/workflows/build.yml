@@ -1,3 +1,6 @@
+permissions:
+  contents: write
+  
 name: Build — Windows, Linux, Mac
 
 on:
