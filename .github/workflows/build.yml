@@ -156,3 +156,6 @@ jobs:
            files: release/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          release:
+          needs: [build-windows, build-linux, build-mac]
+          runs-on: ubuntu-latest
