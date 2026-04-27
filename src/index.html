@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Game Launcher</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:        #080c14;
+      --surface:   #0d1525;
+      --surface2:  #111d30;
+      --border:    #1e3a5f;
+      --accent:    #00d4ff;
+      --accent2:   #ff6b35;
+      --accent3:   #39ff14;
+      --text:      #c8dff0;
+      --muted:     #4a7090;
+      --danger:    #ff3860;
+      --glow:      0 0 20px rgba(0, 212, 255, 0.3);
+      --glow2:     0 0 20px rgba(255, 107, 53, 0.4);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Exo 2', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Scanline overlay */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.08) 2px,
+        rgba(0,0,0,0.08) 4px
+      );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    #app {
+      position: relative;
+      z-index: 2;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px 60px;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 28px 0 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 32px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-icon {
+      width: 48px; height: 48px;
+      background: linear-gradient(135deg, var(--accent), #0066ff);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      box-shadow: var(--glow);
+      animation: pulse-glow 3s ease-in-out infinite;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 15px rgba(0,212,255,0.3); }
+      50%       { box-shadow: 0 0 35px rgba(0,212,255,0.7); }
+    }
+
+    .logo-text h1 {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: #fff;
+      text-transform: uppercase;
+    }
+
+    .logo-text span {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 2px;
+    }
+
+    .server-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+    }
+
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+      transition: background 0.3s;
+    }
+
+    .status-dot.online  { background: var(--accent3); box-shadow: 0 0 8px var(--accent3); animation: blink 2s ease-in-out infinite; }
+    .status-dot.offline { background: var(--danger); }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.4; }
+    }
+
+    /* ── Cards / Panels ── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .panel::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0.6;
+    }
+
+    .panel-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ── Path Input ── */
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .path-input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 13px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .path-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(0,212,255,0.15);
+    }
+
+    .path-input::placeholder { color: var(--muted); }
+
+    .btn {
+      padding: 12px 22px;
+      border-radius: 8px;
+      border: none;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #0066ff);
+      color: #000;
+      box-shadow: 0 4px 15px rgba(0,212,255,0.25);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: var(--glow); }
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-scan {
+      background: linear-gradient(135deg, #1a2f50, #0d2040);
+      color: var(--accent);
+      border: 1px solid var(--border);
+    }
+    .btn-scan:hover { border-color: var(--accent); box-shadow: var(--glow); }
+
+    .btn-launch {
+      background: linear-gradient(135deg, var(--accent2), #cc3300);
+      color: #fff;
+      padding: 10px 20px;
+      font-size: 13px;
+      box-shadow: 0 4px 15px rgba(255,107,53,0.25);
+    }
+    .btn-launch:hover { transform: translateY(-1px); box-shadow: var(--glow2); }
+    .btn-launch:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ── File Browser ── */
+    .breadcrumb {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      align-items: center;
+      margin-bottom: 14px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+    }
+
+    .breadcrumb-item {
+      color: var(--accent);
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: background 0.15s;
+    }
+    .breadcrumb-item:hover { background: rgba(0,212,255,0.1); }
+    .breadcrumb-sep { color: var(--muted); }
+
+    .file-list {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+
+    .file-list::-webkit-scrollbar { width: 6px; }
+    .file-list::-webkit-scrollbar-track { background: var(--bg); }
+    .file-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      border-bottom: 1px solid rgba(30,58,95,0.5);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .file-item:last-child { border-bottom: none; }
+    .file-item:hover { background: rgba(0,212,255,0.05); }
+
+    .file-item.is-exe {
+      border-left: 2px solid var(--accent3);
+    }
+    .file-item.is-exe:hover { background: rgba(57,255,20,0.05); }
+
+    .file-icon { font-size: 18px; flex-shrink: 0; width: 24px; text-align: center; }
+
+    .file-info { flex: 1; min-width: 0; }
+    .file-name {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 13px;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .file-item.is-exe .file-name { color: var(--accent3); }
+    .file-size {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: 'Share Tech Mono', monospace;
+    }
+
+    .exe-badge {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px;
+      padding: 2px 7px;
+      background: rgba(57,255,20,0.1);
+      border: 1px solid rgba(57,255,20,0.3);
+      color: var(--accent3);
+      border-radius: 4px;
+      letter-spacing: 1px;
+    }
+
+    /* ── Detected Games ── */
+    .game-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .game-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .game-card:hover {
+      border-color: var(--accent2);
+      box-shadow: 0 4px 20px rgba(255,107,53,0.15);
+    }
+
+    .game-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent2), var(--accent));
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .game-card:hover::after { opacity: 1; }
+
+    .game-card-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .game-icon {
+      width: 44px; height: 44px;
+      background: linear-gradient(135deg, #1a2a40, #0d1a30);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    .game-info { flex: 1; min-width: 0; }
+    .game-name {
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 700;
+      font-size: 16px;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .game-path {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+    .game-size {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      color: var(--accent);
+      padding: 3px 8px;
+      background: rgba(0,212,255,0.08);
+      border-radius: 4px;
+      align-self: flex-start;
+      white-space: nowrap;
+    }
+
+    /* ── Log / Toast ── */
+    #log {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      max-height: 140px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    #log::-webkit-scrollbar { width: 4px; }
+    #log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .log-entry {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      animation: fadein 0.3s ease;
+    }
+
+    @keyframes fadein {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .log-time { color: var(--muted); flex-shrink: 0; }
+    .log-msg  { color: var(--text); }
+    .log-msg.ok      { color: var(--accent3); }
+    .log-msg.error   { color: var(--danger); }
+    .log-msg.info    { color: var(--accent); }
+    .log-msg.warning { color: var(--accent2); }
+
+
+    /* ── Credits ── */
+    .credits {
+      position: fixed;
+      bottom: 16px;
+      left: 20px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 3;
+      letter-spacing: 1px;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+    .credits:hover { opacity: 1; }
+    .credits .credits-name { color: var(--accent); }
+    .credits .credits-year { color: var(--muted); }
+    .credits .credits-sep { color: var(--border); }
+    /* ── Spinner ── */
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(0,212,255,0.2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: inline-block;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ── Empty state ── */
+    .empty {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+    }
+    .empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
+    .empty p { font-size: 14px; line-height: 1.6; }
+
+    /* ── Offline overlay ── */
+    #offline-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(8,12,20,0.95);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      backdrop-filter: blur(4px);
+    }
+
+    #offline-overlay.hidden { display: none; }
+
+    .offline-icon { font-size: 56px; }
+    .offline-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: var(--danger);
+      text-transform: uppercase;
+    }
+    .offline-desc {
+      color: var(--muted);
+      text-align: center;
+      max-width: 420px;
+      font-size: 14px;
+      line-height: 1.7;
+      font-family: 'Share Tech Mono', monospace;
+    }
+
+    .offline-code {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 30px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 13px;
+      color: var(--accent);
+      text-align: center;
+      line-height: 2;
+    }
+
+    .offline-code strong {
+      color: var(--accent3);
+      font-weight: normal;
+    }
+
+    .btn-retry {
+      background: transparent;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 12px 32px;
+      border-radius: 8px;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-retry:hover { background: rgba(0,212,255,0.1); box-shadow: var(--glow); }
+
+    /* Sections toggle */
+    .section { display: none; }
+    .section.visible { display: block; }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0;
+    }
+
+    .tab {
+      padding: 10px 20px;
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 600;
+      font-size: 13px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .counter-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,212,255,0.15);
+      color: var(--accent);
+      font-size: 10px;
+      min-width: 18px;
+      height: 18px;
+      border-radius: 9px;
+      padding: 0 5px;
+      margin-left: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Offline Overlay -->
+<div id="offline-overlay">
+  <div class="offline-icon">🔌</div>
+  <div class="offline-title">Servidor Offline</div>
+  <div class="offline-desc">
+    O servidor local não está rodando.<br/>
+    Para iniciá-lo, execute o arquivo abaixo:
+  </div>
+  <div class="offline-code">
+    <div>📁 Abra a pasta do launcher</div>
+    <div>🖱️ Dê duplo clique em <strong>start.bat</strong></div>
+    <div>🌐 O navegador abrirá automaticamente</div>
+  </div>
+  <button class="btn-retry" onclick="checkServer()">↺ Tentar Novamente</button>
+</div>
+
+<div id="app">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🎮</div>
+      <div class="logo-text">
+        <h1>Game Launcher</h1>
+        <span>LOCAL BRIDGE v1.2 — ELECTRON</span>
+      </div>
+    </div>
+    <div class="server-status">
+      <div class="status-dot" id="status-dot"></div>
+      <span id="status-text" style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted)">VERIFICANDO...</span>
+    </div>
+  </header>
+
+  <!-- Path + Scan -->
+  <div class="panel">
+    <div class="panel-title">📂 Localizar Pasta / Programa</div>
+    <div class="input-row">
+      <input
+        class="path-input"
+        id="path-input"
+        type="text"
+        placeholder="Ex: C:\Games\GeometryDash  ou  D:\Steam\steamapps\common\..."
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button class="btn btn-scan" onclick="openBrowser()">🗂️ Navegar</button>
+      <button class="btn btn-primary" onclick="scanPath()">
+        <span>⚡ Escanear</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('browser')" id="tab-browser">
+      Navegador de Arquivos
+    </div>
+    <div class="tab" onclick="switchTab('games')" id="tab-games">
+      EXEs Detectados
+      <span class="counter-badge" id="game-count">0</span>
+    </div>
+    <div class="tab" onclick="switchTab('log')" id="tab-log">
+      Console
+    </div>
+  </div>
+
+  <!-- Tab: File Browser -->
+  <div class="section visible" id="section-browser">
+    <div class="panel" style="margin-bottom:0">
+      <div class="panel-title">📁 Explorar Arquivos</div>
+      <div class="breadcrumb" id="breadcrumb">
+        <span class="breadcrumb-item" onclick="browseTo(null)">💻 Computador</span>
+      </div>
+      <div class="file-list" id="file-list">
+        <div class="empty">
+          <div class="empty-icon">💻</div>
+          <p>Clique em "Navegar" ou navegue pelo explorador</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: Detected Games -->
+  <div class="section" id="section-games">
+    <div class="panel" style="margin-bottom:0">
+      <div class="panel-title">⚙️ EXEs Detectados</div>
+      <div id="game-grid">
+        <div class="empty">
+          <div class="empty-icon">🔍</div>
+          <p>Selecione uma pasta e clique em <strong>Escanear</strong><br/>para encontrar jogos automaticamente.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tab: Log -->
+  <div class="section" id="section-log">
+    <div class="panel" style="margin-bottom:0">
+      <div class="panel-title">📟 Console de Atividade</div>
+      <div id="log"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = 'http://localhost:3131';
+  let currentPath = null;
+  let pathHistory = [];
+
+  // ── Tabs ──────────────────────────────────────
+  function switchTab(name) {
+    ['browser','games','log'].forEach(t => {
+      document.getElementById('section-' + t).classList.toggle('visible', t === name);
+      document.getElementById('tab-' + t).classList.toggle('active', t === name);
+    });
+  }
+
+  // ── Server check ──────────────────────────────
+  let _serverWasOnline = false;
+
+  async function checkServer() {
+    try {
+      const r = await fetch(API + '/api/ping', { signal: AbortSignal.timeout(2000) });
+      const data = await r.json();
+      if (data.ok) {
+        document.getElementById('offline-overlay').classList.add('hidden');
+        document.getElementById('status-dot').className = 'status-dot online';
+        document.getElementById('status-text').textContent = 'ONLINE';
+        document.getElementById('status-text').style.color = 'var(--accent3)';
+        // Log only on first successful connection
+        if (!_serverWasOnline) {
+          log('Servidor conectado com sucesso!', 'ok');
+          browseTo(null);
+          _serverWasOnline = true;
+        }
+        return true;
+      }
+    } catch {}
+    // If server goes offline after being online, log it once
+    if (_serverWasOnline) {
+      log('⚠️ Servidor desconectado!', 'error');
+      _serverWasOnline = false;
+    }
+    document.getElementById('offline-overlay').classList.remove('hidden');
+    document.getElementById('status-dot').className = 'status-dot offline';
+    document.getElementById('status-text').textContent = 'OFFLINE';
+    document.getElementById('status-text').style.color = 'var(--danger)';
+    return false;
+  }
+
+  // ── Log ───────────────────────────────────────
+  function log(msg, type = 'info') {
+    const el = document.getElementById('log');
+    const now = new Date().toLocaleTimeString('pt-BR', { hour12: false });
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    entry.innerHTML = `<span class="log-time">[${now}]</span><span class="log-msg ${type}">${msg}</span>`;
+    el.appendChild(entry);
+    el.scrollTop = el.scrollHeight;
+  }
+
+  // ── File Browser ──────────────────────────────
+  async function browseTo(dirPath) {
+    currentPath = dirPath;
+    renderBreadcrumb(dirPath);
+    const listEl = document.getElementById('file-list');
+    listEl.innerHTML = `<div class="file-item"><span class="spinner"></span><span style="margin-left:8px;color:var(--muted);font-size:13px">Carregando...</span></div>`;
+
+    try {
+      const url = dirPath
+        ? `${API}/api/list?path=${encodeURIComponent(dirPath)}`
+        : `${API}/api/list`;
+      const r = await fetch(url);
+      const data = await r.json();
+
+      if (data.error) { listEl.innerHTML = `<div class="empty"><p style="color:var(--danger)">${data.error}</p></div>`; return; }
+
+      if (!data.items || data.items.length === 0) {
+        listEl.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><p>Pasta vazia</p></div>`;
+        return;
+      }
+
+      listEl.innerHTML = '';
+
+      // Back button
+      if (dirPath) {
+        const parent = dirPath.split(/[\\\/]/).slice(0, -1).join('\\') || null;
+        const back = document.createElement('div');
+        back.className = 'file-item';
+        back.innerHTML = `<span class="file-icon">⬆️</span><div class="file-info"><div class="file-name" style="color:var(--muted)">..</div></div>`;
+        back.onclick = () => browseTo(parent || null);
+        listEl.appendChild(back);
+      }
+
+      data.items.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'file-item' + (item.isExe ? ' is-exe' : '');
+
+        const icon = item.isDirectory ? '📁' : item.isExe ? '⚙️' : getFileIcon(item.name);
+        el.innerHTML = `
+          <span class="file-icon">${icon}</span>
+          <div class="file-info">
+            <div class="file-name">${item.name}</div>
+            ${item.size ? `<div class="file-size">${item.sizeFormatted}</div>` : ''}
+          </div>
+          ${item.isExe ? '<span class="exe-badge">EXE</span>' : ''}
+        `;
+
+        if (item.isDirectory) {
+          el.onclick = () => browseTo(item.path);
+        } else if (item.isExe) {
+          el.onclick = () => {
+            document.getElementById('path-input').value = item.path;
+            launchExe(item.path, item.name);
+          };
+        }
+
+        listEl.appendChild(el);
+      });
+
+    } catch (e) {
+      listEl.innerHTML = `<div class="empty"><p style="color:var(--danger)">Erro ao listar: ${e.message}</p></div>`;
+    }
+  }
+
+  function renderBreadcrumb(dirPath) {
+    const bc = document.getElementById('breadcrumb');
+    bc.innerHTML = '';
+
+    const home = document.createElement('span');
+    home.className = 'breadcrumb-item';
+    home.textContent = '💻 Computador';
+    home.onclick = () => browseTo(null);
+    bc.appendChild(home);
+
+    if (!dirPath) return;
+
+    const parts = dirPath.replace(/\\/g, '/').split('/').filter(Boolean);
+
+    parts.forEach((part, i) => {
+      const sep = document.createElement('span');
+      sep.className = 'breadcrumb-sep';
+      sep.textContent = ' › ';
+      bc.appendChild(sep);
+
+      // Build path up to this segment (fix: was duplicating last folder)
+      const rawPath = parts.slice(0, i + 1).join('\\');
+      // Drive roots need trailing backslash: "D:" => "D:\\"
+      const capPath = rawPath.endsWith(':') ? rawPath + '\\' : rawPath;
+
+      const item = document.createElement('span');
+      item.className = 'breadcrumb-item';
+      item.textContent = part;
+      item.onclick = () => browseTo(capPath);
+      bc.appendChild(item);
+    });
+  }
+
+  async function openBrowser() {
+    // Try native folder picker (Electron), fallback to file browser tab
+    try {
+      const r = await fetch(API + '/api/browse');
+      const data = await r.json();
+      if (!data.canceled && data.path) {
+        document.getElementById('path-input').value = data.path;
+        switchTab('browser');
+        browseTo(data.path);
+        return;
+      }
+    } catch {}
+    switchTab('browser');
+    browseTo(null);
+  }
+
+  function getFileIcon(name) {
+    const ext = name.split('.').pop().toLowerCase();
+    const icons = { dll:'📦', ini:'⚙️', cfg:'⚙️', txt:'📄', log:'📋', png:'🖼️', jpg:'🖼️', mp3:'🎵', ogg:'🎵', wav:'🎵', zip:'🗜️', rar:'🗜️' };
+    return icons[ext] || '📄';
+  }
+
+  // ── Scan ─────────────────────────────────────
+  async function scanPath() {
+    const pathVal = document.getElementById('path-input').value.trim();
+    if (!pathVal) { log('Digite um caminho para escanear!', 'warning'); return; }
+
+    log(`Escaneando: ${pathVal}`, 'info');
+    switchTab('games');
+
+    const grid = document.getElementById('game-grid');
+    grid.innerHTML = `<div class="empty"><span class="spinner"></span><p style="margin-top:12px">Procurando executáveis...</p></div>`;
+
+    try {
+      const r = await fetch(`${API}/api/scan?path=${encodeURIComponent(pathVal)}`);
+      const data = await r.json();
+
+      if (data.error) { grid.innerHTML = `<div class="empty"><p style="color:var(--danger)">${data.error}</p></div>`; log(data.error,'error'); return; }
+
+      document.getElementById('game-count').textContent = data.count;
+      log(`${data.count} executável(is) encontrado(s) em "${pathVal}"`, data.count > 0 ? 'ok' : 'warning');
+
+      if (data.count === 0) {
+        grid.innerHTML = `<div class="empty"><div class="empty-icon">🔍</div><p>Nenhum .exe encontrado nesta pasta.</p></div>`;
+        return;
+      }
+
+      grid.innerHTML = '';
+      grid.className = 'game-grid';
+
+      data.exeFiles.forEach(exe => {
+        const card = document.createElement('div');
+        card.className = 'game-card';
+        const gameName = exe.name.replace(/\.exe$/i, '').replace(/[_-]/g, ' ');
+
+        // Build card without inline onclick to avoid path escaping issues
+        const header = document.createElement('div');
+        header.className = 'game-card-header';
+        header.innerHTML = `
+          <div class="game-icon">⚙️</div>
+          <div class="game-info">
+            <div class="game-name">${gameName}</div>
+            <div class="game-path"></div>
+          </div>
+          <span class="game-size">${exe.sizeFormatted}</span>
+        `;
+        // Set path text safely (no innerHTML injection)
+        header.querySelector('.game-path').textContent = exe.path;
+        header.querySelector('.game-path').title = exe.path;
+
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-launch';
+        btn.textContent = '▶ INICIAR';
+        // Store the real path in dataset — 100% safe, no escaping issues
+        btn.dataset.exePath = exe.path;
+        btn.dataset.gameName = gameName;
+        btn.addEventListener('click', () => launchExe(btn.dataset.exePath, btn.dataset.gameName));
+
+        card.appendChild(header);
+        card.appendChild(btn);
+        grid.appendChild(card);
+      });
+
+    } catch(e) {
+      grid.innerHTML = `<div class="empty"><p style="color:var(--danger)">Erro: ${e.message}</p></div>`;
+      log('Falha na varredura: ' + e.message, 'error');
+    }
+  }
+
+  // ── Launch EXE ────────────────────────────────
+  async function launchExe(exePath, name) {
+    log(`Iniciando: ${name || exePath}...`, 'info');
+    switchTab('log');
+
+    try {
+      const r = await fetch(`${API}/api/launch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: exePath })
+      });
+      const data = await r.json();
+
+      if (data.ok) {
+        log(`✅ ${data.message} (PID: ${data.pid})`, 'ok');
+      } else {
+        log(`❌ Erro: ${data.error}`, 'error');
+      }
+    } catch(e) {
+      log('Falha ao comunicar com servidor: ' + e.message, 'error');
+    }
+  }
+
+  // ── Init ──────────────────────────────────────
+  checkServer();
+  setInterval(checkServer, 15000); // Re-check every 15s
+</script>
+<div class="credits">
+  <span>⚡</span>
+  <span class="credits-name">J.P. Saeki</span>
+  <span class="credits-sep">|</span>
+  <span class="credits-year">2026</span>
+</div>
+</body>
+</html>
