@@ -1,0 +1,151 @@
+name: Build — Windows, Linux, Mac
+
+on:
+  push:
+    branches: [ main, master ]
+  release:
+    types: [ created ]
+  workflow_dispatch: # permite rodar manualmente pelo site do GitHub
+
+jobs:
+
+  # ── Windows → .exe ──────────────────────────────────────────────────────
+  build-windows:
+    name: 🪟 Windows (.exe)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm install
+
+      - name: Gerar ícones
+        run: node gerar-icone.js
+
+      - name: Build Windows
+        run: npx electron-builder --win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artefatos
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: |
+            dist/*.exe
+            dist/*.blockmap
+          retention-days: 30
+
+  # ── Linux → .deb + .AppImage ────────────────────────────────────────────
+  build-linux:
+    name: 🐧 Linux (.deb + AppImage)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependências do sistema
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm fakeroot dpkg
+
+      - name: Instalar dependências npm
+        run: npm install
+
+      - name: Gerar ícones
+        run: node gerar-icone.js
+
+      - name: Build Linux
+        run: npx electron-builder --linux
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artefatos
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-build
+          path: |
+            dist/*.deb
+            dist/*.AppImage
+          retention-days: 30
+
+  # ── Mac → .dmg ──────────────────────────────────────────────────────────
+  build-mac:
+    name: 🍎 Mac (.dmg)
+    runs-on: macos-latest
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm install
+
+      - name: Gerar ícones
+        run: node gerar-icone.js
+
+      - name: Build Mac
+        run: npx electron-builder --mac
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Sem certificado Apple → build não assinado (funciona, mas Mac avisa)
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Upload artefatos
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-build
+          path: |
+            dist/*.dmg
+            dist/*.blockmap
+          retention-days: 30
+
+  # ── Junta tudo num Release (só quando criar uma release no GitHub) ───────
+  release:
+    name: 📦 Publicar Release
+    needs: [ build-windows, build-linux, build-mac ]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    steps:
+      - name: Baixar artefato Windows
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-build
+          path: release/
+
+      - name: Baixar artefato Linux
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-build
+          path: release/
+
+      - name: Baixar artefato Mac
+        uses: actions/download-artifact@v4
+        with:
+          name: mac-build
+          path: release/
+
+      - name: Publicar arquivos na Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
