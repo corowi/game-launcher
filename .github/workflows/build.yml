@@ -156,8 +156,7 @@ jobs:
            files: release/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          release:
+        release:
           needs: [build-windows, build-linux, build-mac]
           runs-on: ubuntu-latest
-          git commit --allow-empty -m "force run"
-          git push
+          if: always()
