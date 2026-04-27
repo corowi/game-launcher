@@ -159,3 +159,5 @@ jobs:
           release:
           needs: [build-windows, build-linux, build-mac]
           runs-on: ubuntu-latest
+          git commit --allow-empty -m "force run"
+          git push
