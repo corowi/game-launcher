@@ -149,3 +149,10 @@ jobs:
           files: release/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publicar release
+        uses: softprops/action-gh-release@v2
+        with:
+           tag_name: v1.0.${{ github.run_number }}
+           files: release/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
